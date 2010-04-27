@@ -1,3 +1,8 @@
+NOTE
+====
+
+In all of the example code here and in the API you need to namespace the object like `GCal4Ruby::Calendar` instead of just `Calendar`
+
 =GCal4Ruby
 ==Introduction
 GCal4Ruby is a full featured wrapper for the google calendar API.  GCal4Ruby implements
