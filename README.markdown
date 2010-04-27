@@ -1,34 +1,52 @@
-NOTE
-====
+NOTES
+----
 
-In all of the example code here and in the API you need to namespace the object like `GCal4Ruby::Calendar` instead of just `Calendar`
+In all of the example code here and in the API you need to namespace the object like `GCal4Ruby::Calendar` instead of just `Calendar`.  This documentation needs a lot of reformatting.
 
-=GCal4Ruby
-==Introduction
+GCal4Ruby
+===
+
+Introduction
+------------
+
 GCal4Ruby is a full featured wrapper for the google calendar API.  GCal4Ruby implements
 all of the functionality available through the Google Calnedar API, including permissions,
 attendees, reminders and event recurrence.  
 
-==Author and Contact Information
+Author and Contact Information
+------------------------------
+
 This branch was made by Matt Gornick (http://github.com/mgornick) to implement Google AuthSub into the original 
 GCal4Ruby that was created and is maintained by {Mike Reich}[mailto:mike@seabourneconsulting.com] 
 and is licenses under the GPL v2.  Feel free to use and update, but be sure to contribute your
 code back to the project and attribute as required by the license.
-===Website
+
+Website
+-------
+
 http://rubyforge.org/projects/gcal4ruby/
 
-===Example Application
+Example Application
+-------------------
+
 http://github.com/mgornick/studentplanr
 
-==Description
+Description
+-----------
+
 GCal4Ruby has three major components: the service, calendar and event objects.  Each service
 has many calendars, which in turn have many events.  Each service is the representation of a
 google account, and thus must be successfully authenticated using valid Google Calendar
 account credentials.  
 
-==Examples
+Examples
+--------
+
 Below are some common usage examples.  For more examples, check the documentation.
-===Service
+
+Service
+-------
+
 1. Authenticate
     service = Service.new
     service.authenticate("user@gmail.com", "password")
@@ -54,8 +72,11 @@ Below are some common usage examples.  For more examples, check the documentatio
 3. Get Calendar List
     calendars = service.calendars
 
-===Calendar
+Calendar
+--------
+
 All usages assume a successfully authenticated Service.
+
 1. Create a new Calendar
     cal = Calendar.new(service)
 
@@ -67,8 +88,12 @@ All usages assume a successfully authenticated Service.
 
 4. Find a calendar by ID
     cal = Calendar.find(service, id, :first)
-===Event
+
+Event
+-----
+
 All usages assume a successfully authenticated Service and valid Calendar.
+
 1. Create a new Event
     event = Event.new(calendar)
     event.title = "Soccer Game"
