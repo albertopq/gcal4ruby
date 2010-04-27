@@ -2,11 +2,11 @@
 
 Gem::Specification.new do |s|
   s.name = %q{gcal4ruby}
-  s.version = "0.3.1"
+  s.version = "0.3.2"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
-  s.authors = ["Mike Reich", "Matt Gornick"]
-  s.date = %q{2010-02-18}
+  s.authors = ["Mike Reich", "Matt Gornick", "Jeff Casimir"]
+  s.date = %q{2010-04-27}
   s.description = %q{A full featured wrapper for interacting with the Google Calendar API}
   s.email = %q{mike@seabourneconsulting.com}
   s.files = ["README", "CHANGELOG", "lib/gcal4ruby.rb", "lib/gcal4ruby/base.rb", "lib/gcal4ruby/service.rb", "lib/gcal4ruby/calendar.rb", "lib/gcal4ruby/event.rb", "lib/gcal4ruby/recurrence.rb", "test/unit.rb"]
