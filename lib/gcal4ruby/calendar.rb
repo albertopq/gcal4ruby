@@ -354,9 +354,11 @@ class Calendar
     params[:showCalendars] = params[:showCalendars] == false ? "showCalendars=0" : ''
     params[:showTimezone] = params[:showTimezone] == false ? 'showTz=0' : ''
     params[:border] ||= "0"
+    params[:mode] ||= "WEEK"
     output = ''
     params.each do |key, value|
       case key
+        when :mode then output += "mode=#{value}"
         when :height then output += "height=#{value}"
         when :width then output += "width=#{value}"
         when :title then output += "title=#{CGI.escape(value)}"
