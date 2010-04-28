@@ -23,6 +23,37 @@ module GCal4Ruby
 #to the Google Calendar service.
 
 class Calendar
+  
+  GOOGLE_PARAM_NAMES = {
+    :mode => "mode",
+    :height => "height",
+    :width => "width",
+    :bg_color => "bgcolor",
+    :color => "color",
+    :show_title => "showTitle",
+    :show_nav => "showNav",
+    :show_date => "showDate",
+    :show_print => "showPrint",
+    :show_tabs => "showTabs",
+    :show_calendars => "showCalendars",
+    :show_timezone => "showTimezone"    
+  }
+  
+  IFRAME_DEFAULTS = {
+    :mode => "WEEK", 
+    :height => "600",
+    :width => "600",
+    :bg_color => "#FFFFFF",
+    :color => "#2852A3",
+    :show_title => false,
+    :show_nav => true,
+    :show_date => true,
+    :show_print => true,
+    :show_tabs => true,
+    :show_calendars => true,
+    :show_timezone => true
+  }
+    
   CALENDAR_FEED = "http://www.google.com/calendar/feeds/default/owncalendars/full"
   
   #The calendar title
@@ -338,53 +369,16 @@ class Calendar
   #   dates:: a range of dates to display in the format of 'yyyymmdd/yyyymmdd'.  Example: 20090820/20091001
   #   privateKey:: use to display a private calendar.  You can find this key under the calendar settings pane of the Google Calendar website.
   def to_iframe(params = {})
-    if not self.id
-      raise "The calendar must exist and be saved before you can use this method."
-    end
-    
-    ## This is a mess and needs major cleanup
-    
-    params[:id] = self.id
-    params[:height] ||= "600"
-    params[:width] ||= "600"
-    params[:bgcolor] ||= "#FFFFFF"
-    params[:color] ||= "#2952A3"
-    params[:showTitle] = params[:showTitle] == false ? "showTitle=0" : ''
-    params[:showNav] = params[:showNav] == false ? "showNav=0" : ''
-    params[:showDate] = params[:showDate] == false ? "showDate=0" : ''
-    params[:showPrint] = params[:showPrint] == false ? "showPrint=0" : ''
-    params[:showTabs] = params[:showTabs] == false ? "showTabs=0" : ''
-    params[:showCalendars] = params[:showCalendars] == false ? "showCalendars=0" : ''
-    params[:showTimezone] = params[:showTimezone] == false ? 'showTz=0' : ''
-    params[:border] ||= "0"
-    params[:mode] ||= "WEEK"
-    output = ''
-    params.each do |key, value|
-      part = nil
-      part = case key
-        when :mode then "mode=#{value}"
-        when :height then  "height=#{value}"
-        when :width then  "width=#{value}"
-        when :title then  "title=#{CGI.escape(value)}"
-        #when :bgcolor then  "bgcolor=#{CGI.escape(value)}"
-        when :showTitle then  value
-        when :showDate then  value
-        when :showNav then  value
-        when :showPrint then  value
-        when :showTabs then  value
-        when :showCalendars then  value
-        when :showTimezone then  value
-        when :viewMode then  "mode=#{value}"
-        when :dates then  "dates=#{CGI.escape(value)}"
-        when :privateKey then  "pvttk=#{value}"
-      end
+    raise "The calendar must exist and be saved before you can use this method." unless self.id
 
-      output += "#{part}&amp;" unless part.nil?
-    end
-  
-    output += "src=#{params[:id]}&amp;color=#{CGI.escape(params[:color])}"
-        
-    "<iframe src='http://www.google.com/calendar/embed?#{output}' style='#{params[:border]} px solid;' width='#{params[:width]}' height='#{params[:height]}' frameborder='#{params[:border]}' scrolling='no'></iframe>"  
+    options = IFRAME_DEFAULTS.merge(params)
+    output = options.collect do |key, value|
+      if IFRAME_DEFAULTS.keys.include?(key)
+        [GOOGLE_PARAM_NAMES[key], raw_value_to_param_value(value)].join("=")
+      end
+    end.join("&amp;")
+            
+    "<iframe src='http://www.google.com/calendar/embed?src=#{self.id}&amp;#{output}' width='#{options[:width]}' height='#{options[:height]}' frameborder='0' scrolling='no'></iframe>"  
   end
   
   # #Helper function to return a specified calendar id as a formatted iframe embedded google calendar.  This function does not require loading the calendar information from the Google calendar
@@ -448,6 +442,15 @@ class Calendar
   # end
 
   private
+  
+  def raw_value_to_param_value(value)
+    case value
+    when true then "1"
+    when false then "0"
+    else value
+    end
+  end
+  
   @xml 
   @exists = false
   @public = false
