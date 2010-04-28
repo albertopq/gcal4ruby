@@ -1,29 +1,7 @@
 require 'gcal4ruby/event'
 
 module GCal4Ruby
-#The Calendar Class is the representation of a Google Calendar.  Each user account 
-#can have multiple calendars.  You must have an authenticated Service object before 
-#using the Calendar object.
-#=Usage
-#All usages assume a successfully authenticated Service.
-#1. Create a new Calendar
-#    cal = Calendar.new(service)
-#
-#2. Find an existing Calendar
-#    cal = Calendar.find(service, "New Calendar", :first)
-#
-#3. Find all calendars containing the search term
-#    cal = Calendar.find(service, "Soccer Team")
-#
-#4. Find a calendar by ID
-#    cal = Calendar.find(service, id, :first)
-#
-#After a calendar object has been created or loaded, you can change any of the 
-#attributes like you would any other object.  Be sure to save the calendar to write changes
-#to the Google Calendar service.
-
   class Calendar
-  
     GOOGLE_PARAM_NAMES = {
       :mode => "mode",
       :height => "height",
@@ -78,15 +56,12 @@ module GCal4Ruby
       #     return true
     end
   
-    #Returns true if the calendar exists on the Google Calendar system (i.e. was 
-    #loaded or has been saved).  Otherwise returns false.
     def exists?
-      return @exists
+      @exists
     end
-  
-    #Returns true if the calendar is publically accessable, otherwise returns false.
+
     def public?
-      return @public
+      @public
     end
   
     #Returns an array of Event objects corresponding to each event in the calendar.
@@ -108,35 +83,18 @@ module GCal4Ruby
       return events
     end
   
-    #Set the calendar to public (p = true) or private (p = false).  Publically viewable
-    #calendars can be accessed by anyone without having to log in to google calendar.  See
-    #Calendar#to_iframe for options to display a public calendar in a webpage.
-    def public=(p)
-      if p
-        permissions = 'http://schemas.google.com/gCal/2005#read' 
-      else
-        permissions = 'none'
+    def public=(param)
+      permissions = param ? 'http://schemas.google.com/gCal/2005#read' : 'none'  
+
+      path = "http://www.google.com/calendar/feeds/#{@id}/acl/full/default"
+      request = REXML::Document.new(ACL_XML)  # What/Where is ACL_XML???
+      request.root.elements.each() do |ele|
+        if ele.name == 'role'
+          ele.attributes['value'] = permissions
+        end
       end
-    
-      #if p != @public
-        path = "http://www.google.com/calendar/feeds/#{@id}/acl/full/default"
-        request = REXML::Document.new(ACL_XML)
-        request.root.elements.each() do |ele|
-          if ele.name == 'role'
-            ele.attributes['value'] = permissions
-          end
-        
-        end
-        if @service.send_put(path, request.to_s, {"Content-Type" => "application/atom+xml", "Content-Length" => request.length.to_s})
-          @public = p
-          return true
-        else
-          return false
-        end
-      #end
+      @public = @service.send_put(path, request.to_s, {"Content-Type" => "application/atom+xml", "Content-Length" => request.length.to_s})
     end
-
-
   
     #Deletes a calendar.  If successful, returns true, otherwise false.  If successful, the
     #calendar object is cleared.
@@ -331,8 +289,6 @@ module GCal4Ruby
       "<iframe src='http://www.google.com/calendar/embed?src=#{id}&amp;#{output}' width='#{options[:width]}' height='#{options[:height]}' frameborder='0' scrolling='no'></iframe>"  
     end
 
-  private
-  
     def build_options_set(params)
       IFRAME_DEFAULTS.merge(params).collect do |key, value|
         if IFRAME_DEFAULTS.keys.include?(key)
@@ -340,7 +296,9 @@ module GCal4Ruby
         end
       end
     end
-  
+
+  private
+    
     def raw_value_to_param_value(value)
       case value
         when true then "1"
