@@ -341,6 +341,9 @@ class Calendar
     if not self.id
       raise "The calendar must exist and be saved before you can use this method."
     end
+    
+    ## This is a mess and needs major cleanup
+    
     params[:id] = self.id
     params[:height] ||= "600"
     params[:width] ||= "600"
@@ -357,24 +360,26 @@ class Calendar
     params[:mode] ||= "WEEK"
     output = ''
     params.each do |key, value|
-      case key
-        when :mode then output += "mode=#{value}"
-        when :height then output += "height=#{value}"
-        when :width then output += "width=#{value}"
-        when :title then output += "title=#{CGI.escape(value)}"
-        when :bgcolor then output += "bgcolor=#{CGI.escape(value)}"
-        when :showTitle then output += value
-        when :showDate then output += value
-        when :showNav then output += value
-        when :showPrint then output += value
-        when :showTabs then output += value
-        when :showCalendars then output += value
-        when :showTimezone then output += value
-        when :viewMode then output += "mode=#{value}"
-        when :dates then output += "dates=#{CGI.escape(value)}"
-        when :privateKey then output += "pvttk=#{value}"
+      part = nil
+      part = case key
+        when :mode then "mode=#{value}"
+        when :height then  "height=#{value}"
+        when :width then  "width=#{value}"
+        when :title then  "title=#{CGI.escape(value)}"
+        #when :bgcolor then  "bgcolor=#{CGI.escape(value)}"
+        when :showTitle then  value
+        when :showDate then  value
+        when :showNav then  value
+        when :showPrint then  value
+        when :showTabs then  value
+        when :showCalendars then  value
+        when :showTimezone then  value
+        when :viewMode then  "mode=#{value}"
+        when :dates then  "dates=#{CGI.escape(value)}"
+        when :privateKey then  "pvttk=#{value}"
       end
-      output += "&amp;"
+
+      output += "#{part}&amp;" unless part.nil?
     end
   
     output += "src=#{params[:id]}&amp;color=#{CGI.escape(params[:color])}"
