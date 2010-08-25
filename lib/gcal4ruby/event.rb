@@ -343,7 +343,7 @@ module GCal4Ruby
                   @status = :cancelled
               end
             when 'recurrence'
-              @recurrence = Recurrence.new(ele.text)
+              @recurrence = ele.text #Recurrence.new(ele.text)
             when "transparency"
                case ele.attributes["value"]
                   when "http://schemas.google.com/g/2005#event.transparent" 

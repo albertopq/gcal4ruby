@@ -115,6 +115,10 @@ module GCal4Ruby
       ret = do_post(location, header, content)
       while ret.is_a?(Net::HTTPRedirection)
         puts "Redirect received, resending post" if @debug
+        if oauth?
+          header ||= {}
+          header['Cookie'] = ret['set-cookie'] if ret['set-cookie']
+        end
         ret = do_post(ret['location'], header, content)
       end
       if ret.is_a?(Net::HTTPSuccess)
@@ -133,11 +137,14 @@ module GCal4Ruby
       else
         location = url
       end
+      
+      puts "Starting post\nHeader: #{header}\n" if @debug
       if oauth?
+        header ||= {}
+        header.merge!({ 'Accept'=>'application/atom+xml', 'Content-Type' => 'application/atom+xml' })
         ret = @auth_token.post(url.to_s, content, header)
       else
         http = get_http_object(location)
-        puts "Starting post\nHeader: #{header}\n" if @debug
         http.start do |ht|
           ret = ht.post(location.to_s, content, header)
         end
@@ -175,11 +182,13 @@ module GCal4Ruby
         location = url
       end
       
+      puts "Starting put\nHeader: #{header}\n" if @debug
       if oauth?
+        header ||= {}
+        header.merge!({ 'Accept'=>'application/atom+xml', 'Content-Type' => 'application/atom+xml' })
         ret = @auth_token.put(url.to_s, content, header)
       else
         http = get_http_object(location)
-        puts "Starting put\nHeader: #{header}\n" if @debug
         http.start do |ht|
           ret = ht.put(location.to_s, content, header)
         end
@@ -221,11 +230,12 @@ module GCal4Ruby
       else
         location = url
       end
+
+      puts "Starting get\nHeader: #{header}\n" if @debug
       if oauth?
         ret = @auth_token.get(url.to_s, header)
       else
         http = get_http_object(location)
-        puts "Starting get\nHeader: #{header}\n" if @debug
         http.start do |ht|
           ret = ht.get(location.to_s, header)
         end
@@ -263,11 +273,11 @@ module GCal4Ruby
         location = url
       end
       
+      puts "Starting get\nHeader: #{header}\n" if @debug
       if oauth?
         ret = @auth_token.delete(url.to_s, header)
       else
         http = get_http_object(location)
-        puts "Starting get\nHeader: #{header}\n" if @debug
         http.start do |ht|
           ret = ht.delete(location.to_s, header)
         end

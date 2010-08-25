@@ -65,9 +65,13 @@ module GCal4Ruby
     end
   
     #Returns an array of Event objects corresponding to each event in the calendar.
-    def events
+    def events(query_hash = nil)
+      url = @event_feed
+      if query_hash
+        url += "?#{query_hash.to_query}"
+      end
       events = []
-      ret = @service.send_get(@event_feed)
+      ret = @service.send_get(url)
       REXML::Document.new(ret.body).root.elements.each("entry"){}.map do |entry|
         entry.attributes["xmlns:gCal"] = "http://schemas.google.com/gCal/2005"
         entry.attributes["xmlns:gd"] = "http://schemas.google.com/g/2005"
@@ -82,7 +86,11 @@ module GCal4Ruby
       end
       return events
     end
-  
+    
+    def events_since(time)
+      events({ 'updated-min' => time.xmlschema })
+    end
+    
     def public=(param)
       permissions = param ? 'http://schemas.google.com/gCal/2005#read' : 'none'  
 
