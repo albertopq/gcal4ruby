@@ -18,6 +18,8 @@ module GCal4Ruby
 #
 
 class Service < Base
+  AUTH_TYPE_OAUTH = 'OAuth'
+  
   attr_accessor :account, :auth_token, :check_public, :auth_type
   
   def initialize(attributes = {})
@@ -48,6 +50,15 @@ class Service < Base
     @auth_type = 'AuthSub'
     return true
   end
+  
+  def oauth_authenticate(access_token)
+    @auth_token = access_token
+    @auth_type = AUTH_TYPE_OAUTH
+  end
+  
+  def oauth?
+    @auth_type == AUTH_TYPE_OAUTH
+  end
 
   #Returns an array of Calendar objects for each calendar associated with 
   #the authenticated account.
@@ -55,7 +66,7 @@ class Service < Base
     unless @auth_token
       raise NotAuthenticated
     end
-    ret = send_get(CALENDAR_LIST_FEED+"?max-results=10000")
+    ret = send_get(CALENDAR_LIST_FEED+"?max-results=100")
     cals = []
     REXML::Document.new(ret.body).root.elements.each("entry"){}.map do |entry|
       entry.attributes["xmlns:gCal"] = "http://schemas.google.com/gCal/2005"

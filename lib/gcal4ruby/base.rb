@@ -133,10 +133,14 @@ module GCal4Ruby
       else
         location = url
       end
-      http = get_http_object(location)
-      puts "Starting post\nHeader: #{header}\n" if @debug
-      http.start do |ht|
-        ret = ht.post(location.to_s, content, header)
+      if oauth?
+        ret = @auth_token.post(url.to_s, content, header)
+      else
+        http = get_http_object(location)
+        puts "Starting post\nHeader: #{header}\n" if @debug
+        http.start do |ht|
+          ret = ht.post(location.to_s, content, header)
+        end
       end
       return ret
     end
@@ -170,10 +174,15 @@ module GCal4Ruby
       else
         location = url
       end
-      http = get_http_object(location)
-      puts "Starting put\nHeader: #{header}\n" if @debug
-      http.start do |ht|
-        ret = ht.put(location.to_s, content, header)
+      
+      if oauth?
+        ret = @auth_token.put(url.to_s, content, header)
+      else
+        http = get_http_object(location)
+        puts "Starting put\nHeader: #{header}\n" if @debug
+        http.start do |ht|
+          ret = ht.put(location.to_s, content, header)
+        end
       end
       return ret
     end
@@ -207,10 +216,14 @@ module GCal4Ruby
       else
         location = url
       end
-      http = get_http_object(location)
-      puts "Starting get\nHeader: #{header}\n" if @debug
-      http.start do |ht|
-        ret = ht.get(location.to_s, header)
+      if oauth?
+        ret = @auth_token.get(url.to_s, header)
+      else
+        http = get_http_object(location)
+        puts "Starting get\nHeader: #{header}\n" if @debug
+        http.start do |ht|
+          ret = ht.get(location.to_s, header)
+        end
       end
       return ret
     end
@@ -244,10 +257,15 @@ module GCal4Ruby
       else
         location = url
       end
-      http = get_http_object(location)
-      puts "Starting get\nHeader: #{header}\n" if @debug
-      http.start do |ht|
-        ret = ht.delete(location.to_s, header)
+      
+      if oauth?
+        ret = @auth_token.delete(url.to_s, header)
+      else
+        http = get_http_object(location)
+        puts "Starting get\nHeader: #{header}\n" if @debug
+        http.start do |ht|
+          ret = ht.delete(location.to_s, header)
+        end
       end
       return ret
     end
