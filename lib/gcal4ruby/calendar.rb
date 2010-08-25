@@ -35,7 +35,7 @@ module GCal4Ruby
     CALENDAR_FEED = "http://www.google.com/calendar/feeds/default/owncalendars/full"
   
     attr_accessor :title, :summary, :hidden, :timezone, :color, :where, :selected
-    attr_reader :service, :id, :event_feed, :editable
+    attr_reader :service, :id, :event_feed, :editable, :edit_feed
   
     def initialize(service, attributes = {})
       super()
@@ -235,20 +235,21 @@ module GCal4Ruby
           when "selected"
             @selected = ele.attributes["value"] == "true" ? true : false
           when "link"
-            if ele.attributes['rel'] == 'edit'
-              @edit_feed = ele.attributes['href']
+            href = ele.attributes['href']
+            case ele.attributes['rel']
+              when "edit" then @edit_feed = href
+              when "http://schemas.google.com/gCal/2005#eventFeed" then @event_feed = href
+              when "http://schemas.google.com/acl/2007#accessControlList" then @acl_feed = href
             end
         end
       end
-    
-      @event_feed = "http://www.google.com/calendar/feeds/#{@id}/private/full"
     
       if @service.check_public
         puts "Getting ACL Feed" if @service.debug
       
         #rescue error on shared calenar ACL list access
         begin 
-          ret = @service.send_get("http://www.google.com/calendar/feeds/#{@id}/acl/full/")
+          ret = @service.send_get(@acl_feed)
         rescue Exception => e
           @public = false
           @editable = false

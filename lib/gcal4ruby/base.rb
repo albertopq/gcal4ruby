@@ -196,8 +196,13 @@ module GCal4Ruby
       location = URI.parse(url)
       puts "url = "+url if @debug
       ret = do_get(location, header)
+
       while ret.is_a?(Net::HTTPRedirection)
         puts "Redirect received from #{location.to_s}, resending get to #{ret['location']}" if @debug
+        if oauth?
+          header ||= {}
+          header['Cookie'] = ret['set-cookie'] if ret['set-cookie']
+        end
         ret = do_get(ret['location'], header)
       end
       if ret.is_a?(Net::HTTPSuccess)
