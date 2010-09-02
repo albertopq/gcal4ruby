@@ -35,7 +35,7 @@ module GCal4Ruby
     CALENDAR_FEED = "http://www.google.com/calendar/feeds/default/owncalendars/full"
   
     attr_accessor :title, :summary, :hidden, :timezone, :color, :where, :selected
-    attr_reader :service, :id, :event_feed, :editable, :edit_feed
+    attr_reader :service, :id, :event_feed, :editable, :edit_feed, :self_feed
   
     def initialize(service, attributes = {})
       super()
@@ -108,7 +108,7 @@ module GCal4Ruby
     #calendar object is cleared.
     def delete
       if @exists    
-        if @service.send_delete(CALENDAR_FEED+"/"+@id)
+        if @service.send_delete(@id)
           @exists = false
           @title = nil
           @summary = nil
@@ -171,11 +171,11 @@ module GCal4Ruby
       ret
     end
   
-    def self.get(service, id)
-      url = 'http://www.google.com/calendar/feeds/default/allcalendars/full/'+id
-      ret = service.send_get(url)
-      puts "==return=="
-      puts ret.body
+    def self.get(service, self_feed)
+      ret = service.send_get(self_feed)
+      c = Calendar.new(service)
+      c.load(ret.body)
+      return c
     end
   
     def self.query(service, query_term)
@@ -229,7 +229,7 @@ module GCal4Ruby
       xml.root.elements.each(){}.map do |ele|
         case ele.name
           when "id"
-            @id = ele.text.gsub("http://www.google.com/calendar/feeds/default/calendars/", "")
+            @id = ele.text #ele.text.gsub("http://www.google.com/calendar/feeds/default/calendars/", "")
           when 'title'
             @title = ele.text
           when 'summary'
@@ -245,6 +245,7 @@ module GCal4Ruby
           when "link"
             href = ele.attributes['href']
             case ele.attributes['rel']
+              when "self" then @self_feed = href
               when "edit" then @edit_feed = href
               when "http://schemas.google.com/gCal/2005#eventFeed" then @event_feed = href
               when "http://schemas.google.com/acl/2007#accessControlList" then @acl_feed = href

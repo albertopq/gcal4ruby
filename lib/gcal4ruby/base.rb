@@ -126,6 +126,8 @@ module GCal4Ruby
         return ret
       else
         puts "invalid response received: "+ret.code if @debug
+        puts "error: "+ret.body.inspect if @debug
+        puts ret.inspect if @debug
         raise HTTPPostFailed, ret.body
       end
     end

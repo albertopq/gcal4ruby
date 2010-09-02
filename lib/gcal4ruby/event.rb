@@ -64,6 +64,9 @@ module GCal4Ruby
     attr_accessor :id
     #Flag indicating whether it is an all day event
     attr_accessor :all_day
+
+    attr_accessor :clio_id
+    attr_accessor :clio_updated_at
     
     @attendees
     
@@ -79,6 +82,7 @@ module GCal4Ruby
     attr_reader :updated
     #The date the event was last edited
     attr_reader :edited
+    
     
     #Sets the reminder options for the event.  Parameter must be a hash containing one of 
     #:hours, :minutes and :days, which are simply the number of each before the event start date you'd like to 
@@ -189,8 +193,8 @@ module GCal4Ruby
       end
       @xml ||= EVENT_XML
       @calendar ||= calendar
-      @transparency ||= "http://schemas.google.com/g/2005#event.opaque"
-      @status ||= "http://schemas.google.com/g/2005#event.confirmed"
+      # @transparency ||= "http://schemas.google.com/g/2005#event.opaque"
+      # @status ||= "http://schemas.google.com/g/2005#event.confirmed"
       @attendees ||= []
       @all_day ||= false
     end
@@ -219,6 +223,7 @@ module GCal4Ruby
     
     #Returns an XML representation of the event.
     def to_xml()
+      updated_clio_id = false
       xml = REXML::Document.new(@xml)
       xml.root.elements.each(){}.map do |ele|
         case ele.name
@@ -278,12 +283,22 @@ module GCal4Ruby
             w.attributes["endTime"] = @all_day ? @end.strftime("%Y-%m-%d") : @end.xmlschema
             set_reminder(w)
           end
+        when "extendedProperty"
+          ele.attributes["value"] = case ele.attributes["name"]
+          when "http://schemas.goclio.com/g/2010#event" then
+            updated_clio_id = true
+            { :guid => @clio_id, :updated_at => @clio_updated_at }.to_json
+          end
         end
       end        
       if not @attendees.empty?
         @attendees.each do |a|
           xml.root.add_element("gd:who", {"email" => a[:email], "valueString" => a[:name], "rel" => "http://schemas.google.com/g/2005#event.attendee"})
         end
+      end
+      unless updated_clio_id
+        value = { :guid => @clio_id, :updated_at => @clio_updated_at }.to_json
+        xml.root.add_element("gd:extendedProperty", {"name" => "http://schemas.goclio.com/g/2010#event", "value"=> value })
       end
       xml.to_s
     end
@@ -297,11 +312,11 @@ module GCal4Ruby
       xml.root.elements.each(){}.map do |ele|
           case ele.name
              when 'updated'
-                @updated = ele.text
+                @updated = Time.parse ele.text
              when 'published'
-                @published = ele.text
+                @published = Time.parse ele.text
              when 'edited'
-                @edited = ele.text
+                @edited = Time.parse ele.text
              when 'id'
                 @id, @edit_feed = ele.text
              when 'title'
@@ -339,18 +354,26 @@ module GCal4Ruby
                  @status =  :confirmed
                 when "http://schemas.google.com/g/2005#event.tentative"
                   @status = :tentative
-                when "http://schemas.google.com/g/2005#event.cancelled"
+                when "http://schemas.google.com/g/2005#event.canceled"
                   @status = :cancelled
               end
             when 'recurrence'
               @recurrence = ele.text #Recurrence.new(ele.text)
-            when "transparency"
+            when "gd:transparency"
                case ele.attributes["value"]
                   when "http://schemas.google.com/g/2005#event.transparent" 
                     @transparency = :free
                   when "http://schemas.google.com/g/2005#event.opaque"
                     @transparency = :busy
                 end
+            when "extendedProperty"
+              case ele.attributes["name"]
+              when "http://schemas.goclio.com/g/2010#event" then
+                json = ele.attributes["value"]
+                json = ActiveSupport::JSON.decode(json)
+                @clio_id = json['guid']
+                @clio_updated_at = Time.parse json['updated_at']
+              end
             end      
         end
     end
@@ -393,10 +416,14 @@ module GCal4Ruby
       if test
         puts "id passed, finding event by id" if calendar.service.debug
         puts "id = "+query if calendar.service.debug
-        event_id = query.gsub("/events/","/private/full/") #fix provided by groesser3
-      
-        es = calendar.service.send_get(event_id)
-        puts es.inspect if calendar.service.debug
+        # event_id = query.gsub("/events/","/private/full/") #fix provided by groesser3
+        event_id = query
+        
+        begin
+          es = calendar.service.send_get(event_id)
+          puts es.inspect if calendar.service.debug
+        rescue Exception => e
+        end
         if es
           entry = REXML::Document.new(es.read_body).root
           puts 'event found' if calendar.service.debug
