@@ -93,7 +93,7 @@ module GCal4Ruby
 
   class Base
     AUTH_URL = "https://www.google.com/accounts/ClientLogin"
-    CALENDAR_LIST_FEED = "http://www.google.com/calendar/feeds/default/allcalendars/full"
+    CALENDAR_LIST_FEED = "https://www.google.com/calendar/feeds/default/allcalendars/full"
     @proxy_info = nil
     @auth_token = nil
     @debug = false
@@ -108,6 +108,7 @@ module GCal4Ruby
     # Returns the Net::HTTPResponse object on succces, or raises the appropriate
     # error if a non 20x response code is received.
     def send_post(url, content, header=nil)
+      url.gsub!("http://","https://")
       header = auth_header(header)
       ret = nil
       location = URI.parse(url)
@@ -158,6 +159,7 @@ module GCal4Ruby
     # Returns the Net::HTTPResponse object on succces, or raises the appropriate
     # error if a non 20x response code is received.
     def send_put(url, content, header=nil)
+      url.gsub!("http://","https://")
       header = auth_header(header)
       ret = nil
       location = URI.parse(url)
@@ -202,6 +204,7 @@ module GCal4Ruby
     # Returns the Net::HTTPResponse object on succces, or raises the appropriate
     # error if a non 20x response code is received.
     def send_get(url, header = nil)
+      url.gsub!("http://","https://")
       header = auth_header(header)
       ret = nil
       location = URI.parse(url)
@@ -249,6 +252,7 @@ module GCal4Ruby
     # Returns the Net::HTTPResponse object on succces, or raises the appropriate
     # error if a non 20x response code is received.
     def send_delete(url, header = nil)
+      url.gsub!("http://","https://")
       header = auth_header(header)
       ret = nil
       location = URI.parse(url)

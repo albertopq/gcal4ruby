@@ -32,7 +32,7 @@ module GCal4Ruby
       :show_timezone => true
     }
     
-    CALENDAR_FEED = "http://www.google.com/calendar/feeds/default/owncalendars/full"
+    CALENDAR_FEED = "https://www.google.com/calendar/feeds/default/owncalendars/full"
   
     attr_accessor :title, :summary, :hidden, :timezone, :color, :where, :selected
     attr_reader :service, :id, :event_feed, :editable, :edit_feed, :self_feed
@@ -44,16 +44,17 @@ module GCal4Ruby
         self.send("#{key}=", value)
       end  
     
-      # @xml ||= CALENDAR_XML
-      #     @exists = false
-      #     @title ||= ""
-      #     @summary ||= ""
-      #     @public ||= false
-      #     @hidden ||= false
-      #     @timezone ||= "America/Los_Angeles"
-      #     @color ||= "#2952A3"
-      #     @where ||= ""
-      #     return true
+      @xml ||= CALENDAR_XML
+      @exists = false
+      @title ||= ""
+      @summary ||= ""
+      @public ||= false
+      @hidden ||= false
+      @timezone ||= "America/Los_Angeles"
+      @color ||= "#2952A3"
+      @where ||= ""
+      # return true
+      return self
     end
   
     def exists?
@@ -94,7 +95,7 @@ module GCal4Ruby
     def public=(param)
       permissions = param ? 'http://schemas.google.com/gCal/2005#read' : 'none'  
 
-      path = "http://www.google.com/calendar/feeds/#{@id}/acl/full/default"
+      path = "https://www.google.com/calendar/feeds/#{@id}/acl/full/default"
       request = REXML::Document.new(ACL_XML)  # What/Where is ACL_XML???
       request.root.elements.each() do |ele|
         if ele.name == 'role'
@@ -179,7 +180,7 @@ module GCal4Ruby
     end
   
     def self.query(service, query_term)
-      url = 'http://www.google.com/calendar/feeds/default/allcalendars/full'+"?q="+CGI.escape(query_term)
+      url = 'https://www.google.com/calendar/feeds/default/allcalendars/full'+"?q="+CGI.escape(query_term)
       ret = service.send_get(url)
       puts "==return=="
       puts ret.body
