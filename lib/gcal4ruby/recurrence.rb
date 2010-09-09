@@ -14,6 +14,8 @@ module GCal4Ruby
   #The Recurrence class stores information on an Event's recurrence.  The class implements
   #the RFC 2445 iCalendar recurrence description.
   class Recurrence
+    include RiCal
+    
     #The event start date/time
     attr_reader :start
     #The event end date/time
@@ -26,6 +28,8 @@ module GCal4Ruby
     attr_reader :frequency
     #True if the event is all day (i.e. no start/end time)
     attr_accessor :all_day
+    
+    attr_accessor :rrule
     
     #Accepts an optional attributes hash or a string containing a properly formatted ISO 8601 recurrence rule.  Returns a new Recurrence object
     def initialize(vars = {})
@@ -41,101 +45,150 @@ module GCal4Ruby
     
     #Accepts a string containing a properly formatted ISO 8601 recurrence rule and loads it into the recurrence object
     def load(rec)
-      attrs = rec.split("\n")
-      attrs.each do |val|
-        key, value = val.split(":")
-        case key
-          when 'DTSTART'
-            @start = Time.parse_complete(value)
-          when 'DTSTART;VALUE=DATE'
-            @start = Time.parse(value)
-            @all_day = true
-          when 'DTSTART;VALUE=DATE-TIME'
-            @start = Time.parse_complete(value)
-          when 'DTEND'
-            @end = Time.parse_complete(value)
-          when 'DTEND;VALUE=DATE'
-            @end = Time.parse(value)
-          when 'DTEND;VALUE=DATE-TIME'
-            @end = Time.parse_complete(value)
-          when 'RRULE'
-            vals = value.split(";")
-            key = ''
-            by = ''
-            int = nil
-            vals.each do |rr|
-              a, h = rr.split("=")
-              case a 
-                when 'FREQ'
-                  key = h.downcase.capitalize
-                when 'INTERVAL'
-                  int = h
-                when 'UNTIL'
-                  @repeat_until = Time.parse(value)
-                else
-                  by = h.split(",")
-              end
-            end
-            @frequency = {key => by}
-            @frequency.merge({'interval' => int}) if int
-        end
+      rec = "BEGIN:VEVENT\n#{rec}" unless (rec.starts_with? "BEGIN:VEVENT")
+      rec = "#{rec}END:VEVENT\n" unless (rec.ends_with? "END:VEVENT\n")
+      
+      @rrule = RiCal.parse_string(rec)
+      if @rrule.is_a? Array
+        @rrule = @rrule.first
       end
+      # attrs = rec.split("\n")
+      # attrs.each do |val|
+      #   key, value = val.split(":")
+      #   case key
+      #     when 'DTSTART'
+      #       @start = Time.parse_complete(value)
+      #     when 'DTSTART;VALUE=DATE'
+      #       @start = Time.parse(value)
+      #       @all_day = true
+      #     when 'DTSTART;VALUE=DATE-TIME'
+      #       @start = Time.parse_complete(value)
+      #     when 'DTEND'
+      #       @end = Time.parse_complete(value)
+      #     when 'DTEND;VALUE=DATE'
+      #       @end = Time.parse(value)
+      #     when 'DTEND;VALUE=DATE-TIME'
+      #       @end = Time.parse_complete(value)
+      #     when 'RRULE'
+      #       vals = value.split(";")
+      #       key = ''
+      #       by = ''
+      #       int = nil
+      #       vals.each do |rr|
+      #         a, h = rr.split("=")
+      #         case a 
+      #           when 'FREQ'
+      #             key = h.downcase.capitalize
+      #           when 'INTERVAL'
+      #             int = h
+      #           when 'UNTIL'
+      #             @repeat_until = Time.parse(value)
+      #           else
+      #             by = h.split(",")
+      #         end
+      #       end
+      #       @frequency = {key => by}
+      #       @frequency.merge({'interval' => int}) if int
+      #   end
+      # end
     end
     
     #Returns a string with the correctly formatted ISO 8601 recurrence rule
     def to_s
-      
-      output = ''
-      if @all_day
-        output += "DTSTART;VALUE=DATE:#{@start.utc.strftime("%Y%m%d")}\n"
-      else
-        output += "DTSTART;VALUE=DATE-TIME:#{@start.complete}\n"
-      end
-      if @all_day
-        output += "DTEND;VALUE=DATE:#{@end.utc.strftime("%Y%m%d")}\n"
-      else
-        output += "DTEND;VALUE=DATE-TIME:#{@end.complete}\n"
-      end
-      output += "RRULE:"
-      if @frequency
-        f = 'FREQ='
-        i = ''
-        by = ''
-        @frequency.each do |key, v|
-          if v.is_a?(Array) 
-            if v.size > 0
-              value = v.join(",") 
-            else
-              value = nil
-            end
-          else
-            value = v
-          end
-          f += "#{key.upcase};" if key != 'interval'
-          case key.downcase
-            when "secondly"
-              by += "BYSECOND=#{value};"
-            when "minutely"
-              by += "BYMINUTE=#{value};"
-            when "hourly"
-              by += "BYHOUR=#{value};"
-            when "weekly"
-              by += "BYDAY=#{value};" if value
-            when "monthly"
-              by += "BYDAY=#{value};"
-            when "yearly"
-              by += "BYYEARDAY=#{value};"
-            when 'interval'
-              i += "INTERVAL=#{value};"
-          end
-        end
-        output += f+i+by
-      end      
-      if @repeat_until
-        output += "UNTIL=#{@repeat_until.strftime("%Y%m%d")}"
-      end
-      
-      output += "\n"
+      return @rrule.to_s.gsub("BEGIN:VEVENT\n","").gsub("END:VEVENT\n","")
+      # 
+      # output = ''
+      # if @all_day
+      #   output += "DTSTART;VALUE=DATE:#{@start.utc.strftime("%Y%m%d")}\n"
+      # else
+      #   output += "DTSTART;VALUE=DATE-TIME:#{@start.complete}\n"
+      # end
+      # if @all_day
+      #   output += "DTEND;VALUE=DATE:#{@end.utc.strftime("%Y%m%d")}\n"
+      # else
+      #   output += "DTEND;VALUE=DATE-TIME:#{@end.complete}\n"
+      # end
+      # output += "RRULE:"
+      # if @frequency
+      #   f = 'FREQ='
+      #   i = ''
+      #   by = ''
+      #   @frequency.each do |key, v|
+      #     if v.is_a?(Array) 
+      #       if v.size > 0
+      #         value = v.join(",") 
+      #       else
+      #         value = nil
+      #       end
+      #     else
+      #       value = v
+      #     end
+      #     f += "#{key.upcase};" if key != 'interval'
+      #     case key.downcase
+      #       when "secondly"
+      #         by += "BYSECOND=#{value};"
+      #       when "minutely"
+      #         by += "BYMINUTE=#{value};"
+      #       when "hourly"
+      #         by += "BYHOUR=#{value};"
+      #       when "weekly"
+      #         by += "BYDAY=#{value};" if value
+      #       when "monthly"
+      #         by += "BYDAY=#{value};"
+      #       when "yearly"
+      #         by += "BYYEARDAY=#{value};"
+      #       when 'interval'
+      #         i += "INTERVAL=#{value};"
+      #     end
+      #   end
+      #   output += f+i+by
+      # end      
+      # if @repeat_until
+      #   output += "UNTIL=#{@repeat_until.strftime("%Y%m%d")}"
+      # end
+      # 
+      # output += "\n"
+    end
+    
+    def to_clio_s
+      # output = ""
+      # if @frequency
+      #   f = 'FREQ='
+      #   i = ''
+      #   by = ''
+      #   @frequency.each do |key, v|
+      #     if v.is_a?(Array) 
+      #       if v.size > 0
+      #         value = v.join(",") 
+      #       else
+      #         value = nil
+      #       end
+      #     else
+      #       value = v
+      #     end
+      #     f += "#{key.upcase};" if key != 'interval'
+      #     case key.downcase
+      #       when "secondly"
+      #         by += "BYSECOND=#{value};"
+      #       when "minutely"
+      #         by += "BYMINUTE=#{value};"
+      #       when "hourly"
+      #         by += "BYHOUR=#{value};"
+      #       when "weekly"
+      #         by += "BYDAY=#{value};" if value
+      #       when "monthly"
+      #         by += "BYDAY=#{value};"
+      #       when "yearly"
+      #         by += "BYYEARDAY=#{value};"
+      #       when 'interval'
+      #         i += "INTERVAL=#{value};"
+      #     end
+      #   end
+      #   output += f+i+by
+      # end      
+      # if @repeat_until
+      #   output += "UNTIL=#{@repeat_until.strftime("%Y%m%d")}"
+      # end
     end
     
     #Sets the start date/time.  Must be a Time object.

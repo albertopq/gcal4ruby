@@ -68,6 +68,7 @@ module GCal4Ruby
     attr_accessor :clio_id
     attr_accessor :clio_updated_at
     
+    
     @attendees
     
     #The event start time
@@ -82,7 +83,6 @@ module GCal4Ruby
     attr_reader :updated
     #The date the event was last edited
     attr_reader :edited
-    
     
     #Sets the reminder options for the event.  Parameter must be a hash containing one of 
     #:hours, :minutes and :days, which are simply the number of each before the event start date you'd like to 
@@ -119,12 +119,36 @@ module GCal4Ruby
     #Sets the event's recurrence information to a Recurrence object.  Returns the recurrence if successful,
     #false otherwise
     def recurrence=(r)
-      if r.is_a?(Recurrence) or r.nil?
-        r.event = self unless r.nil?
+      if r.is_a?(RiCal.Event.class)
         @recurrence = r
+      elsif r.nil?
+        @recurrence = nil
       else
         return false
       end
+      if (@recurrence)
+        @start = @recurrence.dtstart
+        @end = @recurrence.dtend
+        if @recurrence.dtstart.is_a?(Date) && @recurrence.dtend.is_a?(Date)
+          @all_day = true
+        else
+          @all_day = false
+        end
+      end
+      @recurrence
+    end
+    
+    def recurrence_to_google
+      @recurrence.to_s.gsub("BEGIN:VEVENT\n","").gsub("END:VEVENT\n","")
+    end
+    
+    def recurrence_from_google(rec)
+      rec = "BEGIN:VEVENT\n#{rec}" unless (rec.starts_with? "BEGIN:VEVENT")
+      rec = "#{rec}END:VEVENT\n" unless (rec.ends_with? "END:VEVENT\n")
+      
+      rrule = RiCal.parse_string(rec)
+      rrule = [rrule].flatten.first
+      self.recurrence = rrule
     end
     
     #Returns a duplicate of the current event as a new Event object
@@ -142,6 +166,8 @@ module GCal4Ruby
         @start = Time.parse(str)      
       elsif str.is_a?Time
         @start = str
+      elsif str.is_a?Date
+        @start = str.to_time
       else
         raise "Start Time must be either Time or String"
       end
@@ -154,6 +180,8 @@ module GCal4Ruby
         @end = Time.parse(str)      
       elsif str.is_a?Time
         @end = str
+      elsif str.is_a?Date
+        @end = str.to_time
       else
         raise "End Time must be either Time or String"
       end
@@ -241,7 +269,7 @@ module GCal4Ruby
           else
             if not @reminder
               xml.root.delete_element("/entry/gd:when")
-              xml.root.add_element("gd:recurrence").text = @recurrence.to_s
+              xml.root.add_element("gd:recurrence").text = self.recurrence_to_google
             else
               ele.delete_attribute('startTime')
               ele.delete_attribute('endTime')
@@ -274,7 +302,7 @@ module GCal4Ruby
           puts 'recurrence element found' if @calendar.service.debug
           if @recurrence
             puts 'setting recurrence' if @calendar.service.debug
-            ele.text = @recurrence.to_s
+            ele.text = self.recurrence_to_google
           else
             puts 'no recurrence, adding when' if @calendar.service.debug
             w = xml.root.add_element("gd:when")
@@ -293,7 +321,8 @@ module GCal4Ruby
       end        
       if not @attendees.empty?
         @attendees.each do |a|
-          xml.root.add_element("gd:who", {"email" => a[:email], "valueString" => a[:name], "rel" => "http://schemas.google.com/g/2005#event.attendee"})
+          a = xml.root.add_element("gd:who", {"email" => a[:email], "valueString" => a[:name], "rel" => "http://schemas.google.com/g/2005#event.attendee"})
+          a.add_element("gd:attendeeStatus", {"value" => "http://schemas.google.com/g/2005#event.accepted"})
         end
       end
       unless updated_clio_id
@@ -329,6 +358,12 @@ module GCal4Ruby
                 ele.elements.each("gd:reminder") do |r|
                   @reminder = {:minutes => r.attributes['minutes'] ? r.attributes['minutes'] : 0, :hours => r.attributes['hours'] ? r.attributes['hours'] : 0, :days => r.attributes['days'] ? r.attributes['days'] : 0, :method => r.attributes['method'] ? r.attributes['method'] : ''}
                 end
+                
+                puts "#{@start.strftime("%Y-%m-%d")} == #{ele.attributes['startTime']} && #{@end.strftime("%Y-%m-%d")} == #{ele.attributes['endTime']}" if @calendar.service.debug
+                if @start.strftime("%Y-%m-%d") == ele.attributes['startTime'] && @end.strftime("%Y-%m-%d") == ele.attributes['endTime']
+                  puts "ALL DAY" if @calendar.service.debug
+                  @all_day = true
+                end
               when "where"
                 @where = ele.attributes['valueString']
               when "link"
@@ -358,7 +393,7 @@ module GCal4Ruby
                   @status = :cancelled
               end
             when 'recurrence'
-              @recurrence = ele.text #Recurrence.new(ele.text)
+              self.recurrence_from_google(ele.text) #Recurrence.new(ele.text)
             when "gd:transparency"
                case ele.attributes["value"]
                   when "http://schemas.google.com/g/2005#event.transparent" 
