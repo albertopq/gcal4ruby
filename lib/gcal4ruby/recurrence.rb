@@ -1,3 +1,5 @@
+require 'ri_cal'
+
 class Time
   #Returns a ISO 8601 complete formatted string of the time
   def complete
