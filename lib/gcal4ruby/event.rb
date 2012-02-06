@@ -496,7 +496,7 @@ module GCal4Ruby
       query_string += "&ctz=#{timezone.gsub(" ", "_")}" if timezone
       query_string += "&singleevents=#{single_events}" if single_events
       if query_string
-        events = calendar.service.send_get("https://www.google.com/calendar/feeds/#{calendar.id}/private/full?"+query_string)
+        events = calendar.service.send_get("#{calendar.event_feed}?"+query_string)
         ret = []
         REXML::Document.new(events.read_body).root.elements.each("entry"){}.map do |entry|
           Event.define_xml_namespaces(entry)
